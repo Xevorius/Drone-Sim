@@ -66,14 +66,14 @@ public class DroneController : MonoBehaviour
 
     private IEnumerator ReturnAndDestroy()
     {
-        const float arriveThreshold = 1f;
+        const float arriveThreshold = 3f;
         while (true)
         {
             // update destination to the ship’s *current* position
             _agent.SetDestination(ParentShip.transform.position);
 
             // check arrival
-            if (Vector3.Distance(transform.position, ParentShip.transform.position) <= arriveThreshold)
+            if (Vector2.Distance(new Vector2(transform.position.x, transform.position.z), new Vector2(ParentShip.transform.position.x, ParentShip.transform.position.z)) <= arriveThreshold)
                 break;
 
             // wait a short time before updating again

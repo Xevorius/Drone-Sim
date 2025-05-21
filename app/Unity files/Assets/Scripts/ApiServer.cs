@@ -192,14 +192,16 @@ public class ApiServer : MonoBehaviour
         yield return new WaitForEndOfFrame();
 
         // 1) RenderTexture setup
-        var rt = new RenderTexture(mapSize, mapSize, 24);
+        int pxH = mapSize;  
+        int pxW = Mathf.RoundToInt(mapSize * mapCamera.aspect);
+        var rt = new RenderTexture(pxW, pxH, 24);
         mapCamera.targetTexture = rt;
         mapCamera.Render();
 
         // 2) Read pixels into Texture2D
         RenderTexture.active = rt;
-        var tex = new Texture2D(mapSize, mapSize, TextureFormat.RGB24, false);
-        tex.ReadPixels(new Rect(0, 0, mapSize, mapSize), 0, 0);
+        var tex = new Texture2D(pxW, pxH, TextureFormat.RGB24, false);
+        tex.ReadPixels(new Rect(0, 0, pxW, pxH), 0, 0);
         tex.Apply();
 
         // 3) Encode to PNG
@@ -407,22 +409,6 @@ public class ApiServer : MonoBehaviour
                     continue;
                 }
 
-                // 6) POST /simulations/squadrons/{id}/return
-                if (req.HttpMethod == "POST" && req.Url.AbsolutePath.EndsWith("/return"))
-                {
-                    resp.AddHeader("Access-Control-Allow-Origin","*");
-                    var parts = req.Url.AbsolutePath.Split('/');
-                    var sqId = parts[3];
-                    EnqueueOnMainThread(() => {
-                        var sq = FindObjectsOfType<SquadronController>()
-                                .First(s => s.Id == sqId);
-                        sq.ReturnToShip();
-                    });
-                    resp.StatusCode = 200;
-                    resp.OutputStream.Close();
-                    continue;
-                }
-
                 if (req.HttpMethod == "GET" && req.Url.AbsolutePath.StartsWith("/simulations/drones/") && req.Url.AbsolutePath.EndsWith("/snapshot"))
                 {
                     resp.AddHeader("Access-Control-Allow-Origin", "*");
@@ -528,6 +514,7 @@ public class ApiServer : MonoBehaviour
                         resp.AddHeader("Access-Control-Allow-Origin", "*");
                         resp.ContentType     = "image/png";
                         resp.ContentLength64 = _mapImagePng.Length;
+                        Debug.Log(_mapImagePng.Length);
                         resp.OutputStream.Write(_mapImagePng, 0, _mapImagePng.Length);
                     }
                     resp.OutputStream.Close();
@@ -630,6 +617,22 @@ public class ApiServer : MonoBehaviour
                     resp.OutputStream.Close();
                     continue;
                 }
+                
+                // 6) POST /simulations/squadrons/{id}/return
+                if (req.HttpMethod == "POST" && req.Url.AbsolutePath.EndsWith("/return"))
+                {
+                    resp.AddHeader("Access-Control-Allow-Origin","*");
+                    var parts = req.Url.AbsolutePath.Split('/');
+                    var sqId = parts[3];
+                    EnqueueOnMainThread(() => {
+                        var sq = FindObjectsOfType<SquadronController>()
+                                .First(s => s.Id == sqId);
+                        sq.ReturnToShip();
+                    });
+                    resp.StatusCode = 200;
+                    resp.OutputStream.Close();
+                    continue;
+                }
 
                 if (req.HttpMethod == "GET" && req.Url.AbsolutePath == "/simulations/state")
                 {
@@ -637,7 +640,7 @@ public class ApiServer : MonoBehaviour
                     string json = JsonUtility.ToJson(_simState);
                     byte[] data = Encoding.UTF8.GetBytes(json);
 
-                    resp.ContentType     = "application/json";
+                    resp.ContentType = "application/json";
                     resp.ContentLength64 = data.Length;
                     resp.OutputStream.Write(data, 0, data.Length);
                     resp.OutputStream.Close();

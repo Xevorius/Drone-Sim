@@ -32,8 +32,8 @@ public class CommandShipController : MonoBehaviour
 
     public void SpawnDrone()
     {
-        // pick a point 2 units in front of the ship
-        Vector3 spawnPos = transform.position + transform.forward * 2f;
+    // pick a point 2 units in front of the ship
+        Vector3 spawnPos = new Vector3(transform.position.x, transform.position.y + 20f, transform.position.z);
         // instantiate the prefab
         var go = Instantiate(dronePrefab.gameObject, spawnPos, Quaternion.identity);
         var dr = go.GetComponent<DroneController>();
